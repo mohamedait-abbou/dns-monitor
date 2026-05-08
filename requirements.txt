@@ -1,0 +1,2 @@
+scapy>=2.4.5</content>
+<parameter name="filePath">c:\Users\HP\Desktop\drive_of_S2_cycle\DNS_project\requirements.txt

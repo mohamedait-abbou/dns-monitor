@@ -1,0 +1,22 @@
+# Logs
+dns_log.txt
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Packet captures
+*.pcap
+*.pcapng
+
+# IDE
+.vscode/
+.idea/
+*.swp
