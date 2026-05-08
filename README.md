@@ -24,7 +24,7 @@ A Python-based DNS packet analyzer for network security monitoring and threat de
 ## Installation
 
 ```bash
-git clone <your-repo-url>
+git clone 
 cd dns-monitor
 pip install -r requirements.txt
 ```
