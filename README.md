@@ -20,6 +20,8 @@ DNS Monitor turns raw DNS traffic into actionable security signal. It captures p
 
 No root privileges are needed to explore the project: the built-in simulator generates realistic benign traffic, a DNS tunnelling attempt, a DGA-looking domain, a query flood and an NXDOMAIN burst.
 
+> **New here? Start here:** [`docs/FULL_EXPLANATION.md`](docs/FULL_EXPLANATION.md) is a complete beginner-to-code walkthrough. It explains what DNS is and why it matters, every input and output, the architecture, each source file line by line, the eight rules, and how to rebuild or extend the project yourself.
+
 ## 📸 Screenshots
 
 ### HTML dashboard (generated from the demo simulation)
@@ -171,14 +173,14 @@ dns-monitor/
 │   ├── reporting.py       # console / JSON / Markdown / HTML reporters
 │   └── models.py          # DNSQuery and Alert data classes
 ├── tests/                 # 30 pytest tests
-├── docs/                  # usage, architecture, detections, screenshots
+├── docs/                  # full explanation, usage, architecture, detections, screenshots
 ├── docker/                # Dockerfile + compose stack
 ├── examples/              # config, pcap generator, legacy scripts
 ├── tools/                 # asset generation script
 └── .github/workflows/ci.yml
 ```
 
-Full architecture notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Full architecture notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). For a complete teaching-style explanation of the whole codebase, see [`docs/FULL_EXPLANATION.md`](docs/FULL_EXPLANATION.md).
 
 ## 🧪 Testing
 
