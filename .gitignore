@@ -29,7 +29,8 @@ dist/
 *.pcapng
 
 # IDE / OS
-.vscode/
+# .vscode/ is intentionally committed: it contains pytest discovery,
+# extension recommendations and debug configurations.
 .idea/
 *.swp
 .DS_Store

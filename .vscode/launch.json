@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DNS Monitor: simulate 600",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "dns_monitor",
+      "args": [
+        "run",
+        "--simulate",
+        "600",
+        "--seed",
+        "7",
+        "--json",
+        "out/report.json",
+        "--html",
+        "out/report.html",
+        "--markdown",
+        "out/report.md"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "Pytest: all tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-q"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    }
+  ]
+}

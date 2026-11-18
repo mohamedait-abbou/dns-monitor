@@ -173,10 +173,11 @@ dns-monitor/
 │   ├── reporting.py       # console / JSON / Markdown / HTML reporters
 │   └── models.py          # DNSQuery and Alert data classes
 ├── tests/                 # 30 pytest tests
-├── docs/                  # full explanation, usage, architecture, detections, screenshots
+├── docs/                  # full explanation, VSCode guide, usage, architecture, detections, screenshots
 ├── docker/                # Dockerfile + compose stack
 ├── examples/              # config, pcap generator, legacy scripts
 ├── tools/                 # asset generation script
+├── .vscode/               # pytest discovery, extensions, debug configs
 └── .github/workflows/ci.yml
 ```
 
@@ -192,6 +193,8 @@ python -m build              # sdist + wheel
 ```
 
 CI runs syntax checks, Ruff, the full test suite and a package build on every push and pull request.
+
+**Using VSCode?** Follow [`docs/VSCODE_TESTING.md`](docs/VSCODE_TESTING.md) for interpreter setup, one-click test discovery, debug configurations and the demo dashboard.
 
 ## 🗺 Roadmap
 

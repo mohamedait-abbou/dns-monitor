@@ -958,7 +958,7 @@ make lint
 make build
 ```
 
-CI does the same on Python 3.10, 3.11 and 3.12, then generates and uploads a demo report as an artifact.
+CI does the same on Python 3.10, 3.11 and 3.12, then generates and uploads a demo report as an artifact. If you are working in VSCode, see [VSCODE_TESTING.md](VSCODE_TESTING.md) for interpreter selection, one-click test discovery, debug configurations and the manual demo steps.
 
 ---
 
