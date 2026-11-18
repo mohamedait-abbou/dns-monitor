@@ -57,7 +57,7 @@ jobs:
             --markdown out/report.md --quiet --no-console-report
       - name: Verify report contents
         run: python -c "import json; d=json.load(open('out/report.json')); assert d['summary']['total_queries'] == 600; assert d['summary']['total_alerts'] > 0"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: demo-report
           path: out/
