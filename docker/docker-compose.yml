@@ -1,0 +1,42 @@
+services:
+  # Live capture: requires host networking and raw-socket capabilities (Linux).
+  monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: dns-monitor:local
+    network_mode: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    volumes:
+      - ./out:/app/out
+      - ../examples/config.example.yaml:/app/config.yaml:ro
+    command: ["run", "-c", "/app/config.yaml", "--quiet"]
+
+  # Zero-privilege demo: deterministic simulation plus HTML/JSON reports.
+  demo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: dns-monitor:local
+    volumes:
+      - ./out:/app/out
+    command:
+      - run
+      - --simulate
+      - "600"
+      - --seed
+      - "7"
+      - --jsonl
+      - /app/out/events.jsonl
+      - --sqlite
+      - /app/out/dns.db
+      - --json
+      - /app/out/report.json
+      - --html
+      - /app/out/report.html
+      - --markdown
+      - /app/out/report.md
+      - --quiet
+      - --no-console-report

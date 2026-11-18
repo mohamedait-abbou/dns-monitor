@@ -1,0 +1,44 @@
+digraph dns_monitor {
+  rankdir=LR;
+  bgcolor="transparent";
+  fontname="Segoe UI,Helvetica,Arial,sans-serif";
+  fontsize=11;
+  node [shape=box, style="rounded,filled", fillcolor="#111c33", color="#1e3a5f",
+        fontcolor="#e2e8f0", fontname="Segoe UI,Helvetica,Arial,sans-serif", fontsize=11,
+        margin="0.18,0.12"];
+  edge [color="#38bdf8", penwidth=1.6, arrowsize=0.8];
+
+  subgraph cluster_inputs {
+    label="INPUTS";
+    labelloc=t;
+    color="#164e63";
+    fontcolor="#67e8f9";
+    style=dashed;
+    live   [label="Live interface\n(scapy sniff)"];
+    pcap   [label="PCAP / PCAPNG\n(offline replay)"];
+    sim    [label="Deterministic\nsimulator"];
+  }
+
+  capture [label="Capture + parser\nDNSQuery events", fillcolor="#0e7490", color="#22d3ee", fontcolor="#ecfeff"];
+  engine  [label="Detection engine\n8 configurable rules", fillcolor="#3f1d3a", color="#fb7185", fontcolor="#fff1f2"];
+  analyzer[label="Analyzer\nstats + timeline + alerts", fillcolor="#0e7490", color="#22d3ee", fontcolor="#ecfeff"];
+
+  subgraph cluster_outputs {
+    label="OUTPUTS";
+    labelloc=t;
+    color="#164e63";
+    fontcolor="#67e8f9";
+    style=dashed;
+    sinks  [label="Sinks\nJSONL · CSV · SQLite"];
+    report [label="Reporters\nConsole · JSON · Markdown · HTML"];
+    alerts [label="Alerting\nConsole · log · webhook / Slack"];
+  }
+
+  live -> capture;
+  pcap -> capture;
+  sim  -> capture;
+  capture -> engine -> analyzer;
+  analyzer -> sinks;
+  analyzer -> report;
+  engine -> alerts;
+}

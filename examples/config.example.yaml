@@ -1,0 +1,48 @@
+# DNS Monitor configuration — copy to dns-monitor.yaml and edit.
+capture:
+  interface: null                 # null = OS default interface
+  pcap: null                      # set to replay a capture instead of sniffing
+  bpf_filter: "udp port 53 or tcp port 53"
+  promiscuous: true
+  snaplen: 65535
+  duration: null                  # e.g. 3600 stops after one hour
+
+detectors:
+  enabled_rules:
+    - suspicious_keyword
+    - suspicious_tld
+    - high_entropy
+    - long_label
+    - deep_subdomain
+    - txt_tunnel
+    - rate_limit
+    - nxdomain_burst
+  suspicious_keywords: [malware, phishing, botnet, ransomware, c2, exfil, trojan, backdoor]
+  suspicious_tlds: [xyz, top, su, cc, tk, ml, ga, cf, gq]
+  entropy_threshold: 3.6
+  min_entropy_label_length: 10
+  max_label_length: 40
+  max_subdomain_depth: 4
+  max_txt_answer_length: 120
+  rate_threshold: 50
+  rate_window: 60
+  nxdomain_threshold: 8
+  nxdomain_window: 60
+  ignore_domains: [in-addr.arpa, ip6.arpa, localhost, local, arpa]
+
+output:
+  jsonl: out/events.jsonl
+  json: out/report.json
+  sqlite: out/dns.db
+  csv: out/queries.csv
+  html: out/report.html
+  markdown: out/report.md
+  log_file: out/alerts.log
+  log_level: INFO
+  quiet: false
+
+alerting:
+  webhook_url: null
+  webhook_format: generic         # generic | slack
+  min_severity: low
+  webhook_timeout: 3.0

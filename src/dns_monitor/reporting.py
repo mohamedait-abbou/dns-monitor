@@ -1,0 +1,396 @@
+"""Console, Markdown, JSON and self-contained HTML reporters."""
+
+from __future__ import annotations
+
+import base64
+import html
+import json
+from pathlib import Path
+from typing import Any
+
+from .analyzer import Analyzer
+from .config import OutputConfig
+
+LOGO_URL = (
+    "https://raw.githubusercontent.com/mohamedait-abbou/dns-monitor/"
+    "master/docs/images/logo.png"
+)
+SEVERITY_COLORS = {
+    "critical": "#f43f5e",
+    "high": "#fb7185",
+    "medium": "#fbbf24",
+    "low": "#38bdf8",
+    "info": "#94a3b8",
+}
+
+
+def _escape(value: Any) -> str:
+    return html.escape(str(value), quote=True)
+
+
+def _fmt_time(timestamp: float | None) -> str:
+    if not timestamp:
+        return "-"
+    import datetime
+
+    return datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _fmt_clock(timestamp: float | None) -> str:
+    if not timestamp:
+        return "--:--:--"
+    import datetime
+
+    return datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S")
+
+
+def _embedded_logo() -> str:
+    candidates = [
+        Path(__file__).resolve().parents[2] / "docs" / "images" / "logo.png",
+        Path(__file__).resolve().parents[1] / "docs" / "images" / "logo.png",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            encoded = base64.b64encode(candidate.read_bytes()).decode("ascii")
+            return f"data:image/png;base64,{encoded}"
+    return ""
+
+
+# --------------------------------------------------------------------- console
+def render_console(analyzer: Analyzer, color: bool = True) -> str:
+    lines: list[str] = []
+    rule = "=" * 72
+
+    def heading(text: str) -> None:
+        lines.append("")
+        lines.append(rule)
+        lines.append(f"  {text}")
+        lines.append(rule)
+
+    heading("DNS TRAFFIC MONITOR — SUMMARY REPORT")
+    summary = analyzer.to_dict()["summary"]
+    lines.append(f"  Window          : {_fmt_time(analyzer.started_at)} → {_fmt_time(analyzer.finished_at)}")
+    lines.append(f"  Total queries   : {summary['total_queries']:,}")
+    lines.append(f"  Unique domains  : {summary['unique_domains']:,}")
+    lines.append(f"  Source IPs      : {summary['unique_source_ips']:,}")
+    lines.append(f"  Alerts raised   : {summary['total_alerts']:,}")
+    lines.append(f"  Average rate    : {summary['queries_per_second']:,} queries/s")
+
+    heading("TOP QUERIED DOMAINS")
+    lines.append(f"  {'#':<4}{'DOMAIN':<48}{'QUERIES':>10}")
+    for index, (domain, count) in enumerate(analyzer.top_domains(10), 1):
+        lines.append(f"  {index:<4}{domain[:47]:<48}{count:>10,}")
+
+    heading("TOP SOURCE IPs")
+    lines.append(f"  {'#':<4}{'IP ADDRESS':<20}{'QUERIES':>10}{'DOMAINS':>12}")
+    for index, (ip, count, unique) in enumerate(analyzer.top_ips(10), 1):
+        lines.append(f"  {index:<4}{ip:<20}{count:>10,}{unique:>12,}")
+
+    heading("DETECTION SUMMARY")
+    for name, count in analyzer.alert_counts().items():
+        lines.append(f"  {name.upper():<14}{count:>8,}")
+    for rule_name, count in analyzer.rule_counts():
+        lines.append(f"    - {rule_name:<28}{count:>8,}")
+
+    if analyzer.alerts:
+        heading("RECENT ALERTS")
+        for alert in analyzer.alerts_sorted(10):
+            lines.append(
+                f"  [{alert.severity.upper():<8}] {alert.rule:<20} "
+                f"{alert.domain[:40]:<42} {alert.source_ip}"
+            )
+            lines.append(f"             └ {alert.message}")
+
+    lines.append("")
+    lines.append(rule)
+    return "\n".join(lines)
+
+
+# -------------------------------------------------------------------- markdown
+def render_markdown(analyzer: Analyzer) -> str:
+    data = analyzer.to_dict()
+    summary = data["summary"]
+    lines = [
+        f"![DNS Monitor]({LOGO_URL})",
+        "",
+        "# DNS Monitor — Analysis Report",
+        "",
+        f"Generated: `{data['generated_at']}`",
+        "",
+        "| Metric | Value |",
+        "| --- | ---: |",
+        f"| Total queries | {summary['total_queries']:,} |",
+        f"| Unique domains | {summary['unique_domains']:,} |",
+        f"| Source IPs | {summary['unique_source_ips']:,} |",
+        f"| Alerts | {summary['total_alerts']:,} |",
+        f"| Average rate | {summary['queries_per_second']:,} q/s |",
+        "",
+        "## Top domains",
+        "",
+        "| Domain | Queries |",
+        "| --- | ---: |",
+    ]
+    lines += [f"| `{_escape(item['domain'])}` | {item['count']:,} |" for item in data["top_domains"]]
+    lines += ["", "## Alerts", "", "| Severity | Rule | Domain | Source | Message |", "| --- | --- | --- | --- | --- |"]
+    for alert in data["alerts"]:
+        lines.append(
+            f"| {_escape(alert['severity'])} | `{_escape(alert['rule'])}` | "
+            f"`{_escape(alert['domain'])}` | `{_escape(alert['source_ip'])}` | "
+            f"{_escape(alert['message'])} |"
+        )
+    if not data["alerts"]:
+        lines.append("| - | - | - | - | No alerts triggered |")
+    lines += ["", "---", "*Generated by [DNS Monitor](https://github.com/mohamedait-abbou/dns-monitor)*", ""]
+    return "\n".join(lines)
+
+
+# ------------------------------------------------------------------------ JSON
+def render_json(analyzer: Analyzer) -> str:
+    return json.dumps(analyzer.to_dict(), indent=2, ensure_ascii=False)
+
+
+# ------------------------------------------------------------------------ HTML
+def _svg_timeline(buckets: list[dict], width: int = 1000, height: int = 230) -> str:
+    if not buckets:
+        return '<p class="empty">No traffic captured yet.</p>'
+    pad_l, pad_r, pad_t, pad_b = 46, 18, 18, 32
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    max_value = max(max(point["queries"] for point in buckets), 1)
+    max_alerts = max(max(point["alerts"] for point in buckets), 1)
+
+    def x(index: int) -> float:
+        step = plot_w / max(1, len(buckets) - 1)
+        return pad_l + index * step
+
+    def y(value: int, ceiling: int) -> float:
+        return pad_t + plot_h - (value / max(1, ceiling)) * plot_h
+
+    points = " ".join(f"{x(i):.1f},{y(p['queries'], max_value):.1f}" for i, p in enumerate(buckets))
+    area = (
+        f"{pad_l},{pad_t + plot_h} {points} {x(len(buckets) - 1):.1f},{pad_t + plot_h}"
+    )
+    alert_points = " ".join(f"{x(i):.1f},{y(p['alerts'], max_alerts):.1f}" for i, p in enumerate(buckets))
+    grid_lines = []
+    for tick in range(5):
+        value = max_value * tick / 4
+        gy = y(value, max_value)
+        grid_lines.append(
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{width - pad_r}" y2="{gy:.1f}" '
+            f'stroke="#1e293b" stroke-width="1"/>'
+            f'<text x="{pad_l - 8}" y="{gy + 4:.1f}" text-anchor="end" '
+            f'fill="#64748b" font-size="11">{int(value)}</text>'
+        )
+    label_indices = [0, len(buckets) // 2, len(buckets) - 1]
+    x_labels = []
+    for index in sorted(set(label_indices)):
+        x_labels.append(
+            f'<text x="{x(index):.1f}" y="{height - 8}" text-anchor="middle" '
+            f'fill="#64748b" font-size="11">{_escape(buckets[index]["label"])}</text>'
+        )
+    return f"""
+    <svg viewBox="0 0 {width} {height}" class="chart" role="img" aria-label="DNS query timeline">
+      <defs>
+        <linearGradient id="queryFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      {''.join(grid_lines)}
+      <polygon points="{area}" fill="url(#queryFill)"/>
+      <polyline points="{points}" fill="none" stroke="#22d3ee" stroke-width="2.5"
+                stroke-linejoin="round" stroke-linecap="round"/>
+      <polyline points="{alert_points}" fill="none" stroke="#f43f5e" stroke-width="2"
+                stroke-dasharray="5 4" stroke-linejoin="round"/>
+      {''.join(x_labels)}
+    </svg>"""
+
+
+def _bar_rows(items: list[dict], label_key: str, value_key: str, limit: int = 8) -> str:
+    if not items:
+        return '<p class="empty">No data available.</p>'
+    top = items[:limit]
+    maximum = max(max(item[value_key] for item in top), 1)
+    rows = []
+    for item in top:
+        pct = item[value_key] / maximum * 100
+        rows.append(
+            f'<div class="bar-row"><span class="bar-label" title="{_escape(item[label_key])}">'
+            f'{_escape(item[label_key])}</span>'
+            f'<span class="bar-track"><span class="bar-fill" style="width:{pct:.1f}%"></span></span>'
+            f'<span class="bar-value">{item[value_key]:,}</span></div>'
+        )
+    return "".join(rows)
+
+
+def render_html(analyzer: Analyzer, title: str = "DNS Monitor Report") -> str:
+    data = analyzer.to_dict()
+    summary = data["summary"]
+    logo = _embedded_logo()
+    logo_html = (
+        f'<img class="logo" src="{logo}" alt="DNS Monitor logo"/>'
+        if logo
+        else '<div class="logo-fallback">◈</div>'
+    )
+    severity_cards = "".join(
+        f'<div class="severity-chip" style="--chip:{SEVERITY_COLORS.get(name, "#94a3b8")}">'
+        f'<span class="dot"></span>{_escape(name)} <strong>{count:,}</strong></div>'
+        for name, count in data["alerts_by_severity"].items()
+    ) or '<span class="empty">No alerts</span>'
+
+    alert_rows = "".join(
+        f"<tr><td>{_escape(_fmt_clock(alert['timestamp']))}</td>"
+        f'<td><span class="badge" style="--chip:{SEVERITY_COLORS.get(alert["severity"], "#94a3b8")}">'
+        f'{_escape(alert["severity"])}</span></td>'
+        f'<td><code>{_escape(alert["rule"])}</code></td>'
+        f'<td><code>{_escape(alert["domain"])}</code></td>'
+        f'<td><code>{_escape(alert["source_ip"])}</code></td>'
+        f"<td>{_escape(alert['message'])}</td></tr>"
+        for alert in data["alerts"][:15]
+    ) or (
+        '<tr><td colspan="6" class="empty">No suspicious activity detected in this window.</td></tr>'
+    )
+
+    stat_cards = "".join(
+        f'<div class="stat-card"><span class="stat-label">{label}</span>'
+        f'<span class="stat-value">{value}</span></div>'
+        for label, value in [
+            ("Queries", f"{summary['total_queries']:,}"),
+            ("Unique domains", f"{summary['unique_domains']:,}"),
+            ("Source IPs", f"{summary['unique_source_ips']:,}"),
+            ("Alerts", f"{summary['total_alerts']:,}"),
+            ("Queries / sec", f"{summary['queries_per_second']:,}"),
+        ]
+    )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_escape(title)}</title>
+<style>
+  :root {{ color-scheme: dark; --bg:#070c17; --panel:#0f172a; --line:#1e293b;
+           --text:#e2e8f0; --muted:#94a3b8; --cyan:#22d3ee; }}
+  * {{ box-sizing:border-box; }}
+  body {{ margin:0; background:radial-gradient(circle at 15% -10%, #123047 0%, var(--bg) 45%);
+          color:var(--text); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }}
+  .wrap {{ max-width:1240px; margin:0 auto; padding:36px 28px 64px; }}
+  header {{ display:flex; align-items:center; gap:18px; margin-bottom:28px; }}
+  .logo {{ width:58px; height:58px; object-fit:contain; border-radius:14px; }}
+  .logo-fallback {{ width:58px; height:58px; display:grid; place-items:center; font-size:32px;
+                    border-radius:14px; background:linear-gradient(145deg,#0e7490,#155e75); }}
+  h1 {{ margin:0; font-size:28px; letter-spacing:-.02em; }}
+  header p {{ margin:3px 0 0; color:var(--muted); font-size:13px; }}
+  .live {{ display:inline-flex; align-items:center; gap:6px; margin-left:auto; padding:6px 12px;
+           border:1px solid #164e63; border-radius:999px; color:var(--cyan); font-size:12px; }}
+  .live::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--cyan); }}
+  .stats {{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }}
+  .stat-card {{ background:linear-gradient(160deg,#111c33,#0c1526); border:1px solid var(--line);
+                border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:6px; }}
+  .stat-label {{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.09em; }}
+  .stat-value {{ font-size:26px; font-weight:700; letter-spacing:-.02em; }}
+  .grid {{ display:grid; grid-template-columns:2fr 1fr; gap:18px; }}
+  .panel {{ background:rgba(15,23,42,.82); border:1px solid var(--line); border-radius:16px;
+            padding:20px 22px; margin-bottom:18px; }}
+  .panel h2 {{ margin:0 0 16px; font-size:15px; font-weight:650; letter-spacing:.01em; }}
+  .chart {{ width:100%; height:auto; display:block; }}
+  .legend {{ display:flex; gap:18px; color:var(--muted); font-size:12px; margin-top:6px; }}
+  .legend i {{ display:inline-block; width:18px; height:3px; border-radius:2px; margin-right:6px;
+               vertical-align:middle; background:var(--cyan); }}
+  .legend .alerts i {{ background:#f43f5e; }}
+  .bar-row {{ display:grid; grid-template-columns:minmax(110px,1fr) 2fr 56px; gap:10px;
+              align-items:center; margin-bottom:11px; }}
+  .bar-label {{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+                color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+  .bar-track {{ height:9px; background:#172033; border-radius:99px; overflow:hidden; }}
+  .bar-fill {{ display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,#0891b2,#22d3ee); }}
+  .bar-value {{ text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; font-size:12px; }}
+  .severity-chips {{ display:flex; flex-wrap:wrap; gap:9px; }}
+  .severity-chip {{ --chip:#94a3b8; display:inline-flex; align-items:center; gap:7px;
+                    padding:7px 12px; border-radius:99px; border:1px solid var(--line);
+                    background:#111c33; font-size:12px; text-transform:capitalize; }}
+  .severity-chip .dot {{ width:8px; height:8px; border-radius:50%; background:var(--chip); }}
+  table {{ width:100%; border-collapse:collapse; font-size:12px; }}
+  th {{ text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;
+        letter-spacing:.06em; padding:0 10px 10px 0; border-bottom:1px solid var(--line); }}
+  td {{ padding:10px 10px 10px 0; border-bottom:1px solid #152033; vertical-align:top; }}
+  code {{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:#a5f3fc; font-size:11px; }}
+  .badge {{ --chip:#94a3b8; color:var(--chip); border:1px solid var(--chip); border-radius:6px;
+            padding:2px 7px; font-size:10px; text-transform:uppercase; letter-spacing:.04em; }}
+  .empty {{ color:var(--muted); }}
+  footer {{ color:#475569; font-size:11px; text-align:center; margin-top:30px; }}
+  @media (max-width:900px) {{ .grid {{ grid-template-columns:1fr; }} .stats {{ grid-template-columns:repeat(2,1fr); }} }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    {logo_html}
+    <div>
+      <h1>{_escape(title)}</h1>
+      <p>Generated {_escape(data['generated_at'])} · window {_escape(_fmt_time(analyzer.started_at))} → {_escape(_fmt_time(analyzer.finished_at))}</p>
+    </div>
+    <span class="live">Analysis complete</span>
+  </header>
+
+  <section class="stats">{stat_cards}</section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Query volume &amp; alerts</h2>
+      {_svg_timeline(data['timeline'])}
+      <div class="legend"><span><i></i>DNS queries</span><span class="alerts"><i></i>Alerts</span></div>
+    </section>
+    <section class="panel">
+      <h2>Alert severity</h2>
+      <div class="severity-chips">{severity_cards}</div>
+      <h2 style="margin-top:26px">Rule triggers</h2>
+      {_bar_rows(data['alerts_by_rule'], 'rule', 'count', 6)}
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Top queried domains</h2>
+      {_bar_rows(data['top_domains'], 'domain', 'count', 8)}
+    </section>
+    <section class="panel">
+      <h2>Top source IPs</h2>
+      {_bar_rows(data['top_ips'], 'ip', 'queries', 8)}
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Detection timeline</h2>
+    <table>
+      <thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Domain</th><th>Source IP</th><th>Detail</th></tr></thead>
+      <tbody>{alert_rows}</tbody>
+    </table>
+  </section>
+
+  <footer>DNS Monitor · open-source DNS traffic analysis · github.com/mohamedait-abbou/dns-monitor</footer>
+</div>
+</body>
+</html>
+"""
+
+
+def write_reports(analyzer: Analyzer, output: OutputConfig) -> list[Path]:
+    """Write every enabled report and return the created paths."""
+    from .utils import ensure_parent
+
+    written: list[Path] = []
+    renderers = [
+        (output.json, lambda: render_json(analyzer)),
+        (output.markdown, lambda: render_markdown(analyzer)),
+        (output.html, lambda: render_html(analyzer)),
+    ]
+    for target, renderer in renderers:
+        if not target:
+            continue
+        path = ensure_parent(target)
+        path.write_text(renderer(), encoding="utf-8")
+        written.append(path)
+    return written

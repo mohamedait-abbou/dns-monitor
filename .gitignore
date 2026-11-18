@@ -1,6 +1,11 @@
-# Logs
+# Logs and generated output
 dns_log.txt
 *.log
+out/
+reports/
+*.db
+*.db-wal
+*.db-shm
 
 # Python
 __pycache__/
@@ -8,15 +13,23 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
+.venv/
 venv/
+env/
 .env
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Packet captures
 *.pcap
 *.pcapng
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
 *.swp
+.DS_Store

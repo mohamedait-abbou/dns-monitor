@@ -1,0 +1,360 @@
+{
+  "generated_at": "2026-11-18T19:25:08+00:00",
+  "window": {
+    "started_at": 1795029308.2744381,
+    "finished_at": 1795029908.2744381,
+    "duration_seconds": 600.0
+  },
+  "summary": {
+    "total_queries": 600,
+    "unique_domains": 58,
+    "unique_source_ips": 5,
+    "total_alerts": 362,
+    "queries_per_second": 1.0
+  },
+  "top_domains": [
+    {
+      "domain": "google.com",
+      "count": 60
+    },
+    {
+      "domain": "github.com",
+      "count": 44
+    },
+    {
+      "domain": "www.google.com",
+      "count": 43
+    },
+    {
+      "domain": "api.github.com",
+      "count": 42
+    },
+    {
+      "domain": "wikipedia.org",
+      "count": 35
+    },
+    {
+      "domain": "this-is-an-extremely-long-label-that-should-trigger-the-tunnelling-rule.example.net",
+      "count": 32
+    },
+    {
+      "domain": "python.org",
+      "count": 32
+    },
+    {
+      "domain": "cloudflare.com",
+      "count": 31
+    },
+    {
+      "domain": "mail.example.net",
+      "count": 29
+    },
+    {
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "count": 29
+    }
+  ],
+  "top_ips": [
+    {
+      "ip": "192.168.1.42",
+      "queries": 229,
+      "unique_domains": 50
+    },
+    {
+      "ip": "192.168.1.10",
+      "queries": 97,
+      "unique_domains": 15
+    },
+    {
+      "ip": "192.168.1.11",
+      "queries": 96,
+      "unique_domains": 15
+    },
+    {
+      "ip": "10.0.0.8",
+      "queries": 90,
+      "unique_domains": 15
+    },
+    {
+      "ip": "192.168.1.23",
+      "queries": 88,
+      "unique_domains": 15
+    }
+  ],
+  "query_types": [
+    {
+      "type": "A",
+      "count": 390
+    },
+    {
+      "type": "TXT",
+      "count": 97
+    },
+    {
+      "type": "AAAA",
+      "count": 78
+    },
+    {
+      "type": "MX",
+      "count": 20
+    },
+    {
+      "type": "CNAME",
+      "count": 15
+    }
+  ],
+  "response_codes": [
+    {
+      "code": "NOERROR",
+      "count": 539
+    },
+    {
+      "code": "NXDOMAIN",
+      "count": 61
+    }
+  ],
+  "alerts_by_severity": {
+    "high": 178,
+    "medium": 155,
+    "low": 29
+  },
+  "alerts_by_rule": [
+    {
+      "rule": "suspicious_keyword",
+      "count": 90
+    },
+    {
+      "rule": "txt_tunnel",
+      "count": 87
+    },
+    {
+      "rule": "suspicious_tld",
+      "count": 87
+    },
+    {
+      "rule": "high_entropy",
+      "count": 35
+    },
+    {
+      "rule": "long_label",
+      "count": 32
+    },
+    {
+      "rule": "deep_subdomain",
+      "count": 29
+    },
+    {
+      "rule": "rate_limit",
+      "count": 1
+    },
+    {
+      "rule": "nxdomain_burst",
+      "count": 1
+    }
+  ],
+  "timeline": [
+    {
+      "timestamp": 1795029300,
+      "label": "19:15",
+      "queries": 52,
+      "alerts": 36
+    },
+    {
+      "timestamp": 1795029360,
+      "label": "19:16",
+      "queries": 20,
+      "alerts": 18
+    },
+    {
+      "timestamp": 1795029420,
+      "label": "19:17",
+      "queries": 90,
+      "alerts": 1
+    },
+    {
+      "timestamp": 1795029480,
+      "label": "19:18",
+      "queries": 68,
+      "alerts": 19
+    },
+    {
+      "timestamp": 1795029540,
+      "label": "19:19",
+      "queries": 62,
+      "alerts": 53
+    },
+    {
+      "timestamp": 1795029600,
+      "label": "19:20",
+      "queries": 60,
+      "alerts": 30
+    },
+    {
+      "timestamp": 1795029660,
+      "label": "19:21",
+      "queries": 60,
+      "alerts": 36
+    },
+    {
+      "timestamp": 1795029720,
+      "label": "19:22",
+      "queries": 59,
+      "alerts": 51
+    },
+    {
+      "timestamp": 1795029780,
+      "label": "19:23",
+      "queries": 60,
+      "alerts": 61
+    },
+    {
+      "timestamp": 1795029840,
+      "label": "19:24",
+      "queries": 60,
+      "alerts": 46
+    },
+    {
+      "timestamp": 1795029900,
+      "label": "19:25",
+      "queries": 9,
+      "alerts": 11
+    }
+  ],
+  "alerts": [
+    {
+      "timestamp": 1795029906.2710993,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "q9f3a8b2c1d7e6f5a0b9c8d7e4f3a2b1.darknet.tk",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029903.2660909,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "q9f3a8b2c1d7e6f5a0b9c8d7e4f3a2b1.darknet.tk",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029901.262752,
+      "rule": "suspicious_keyword",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "message": "Risky keyword 'exfil' in queried domain",
+      "metadata": {
+        "keyword": "exfil",
+        "description": "Domain contains a risky keyword (malware, phishing, c2, ...)"
+      }
+    },
+    {
+      "timestamp": 1795029901.262752,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029900.2610826,
+      "rule": "suspicious_keyword",
+      "severity": "high",
+      "source_ip": "192.168.1.11",
+      "domain": "phishing-login.secure-verify.top",
+      "message": "Risky keyword 'phishing' in queried domain",
+      "metadata": {
+        "keyword": "phishing",
+        "description": "Domain contains a risky keyword (malware, phishing, c2, ...)"
+      }
+    },
+    {
+      "timestamp": 1795029893.2493963,
+      "rule": "suspicious_keyword",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "message": "Risky keyword 'exfil' in queried domain",
+      "metadata": {
+        "keyword": "exfil",
+        "description": "Domain contains a risky keyword (malware, phishing, c2, ...)"
+      }
+    },
+    {
+      "timestamp": 1795029893.2493963,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029892.247727,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "q9f3a8b2c1d7e6f5a0b9c8d7e4f3a2b1.darknet.tk",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029887.2393796,
+      "rule": "txt_tunnel",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "q9f3a8b2c1d7e6f5a0b9c8d7e4f3a2b1.darknet.tk",
+      "message": "TXT/NULL answer of 180 bytes may carry tunnelled data",
+      "metadata": {
+        "answer_length": 180,
+        "description": "Oversized TXT/NULL response (possible DNS tunnelling)"
+      }
+    },
+    {
+      "timestamp": 1795029883.232702,
+      "rule": "suspicious_keyword",
+      "severity": "high",
+      "source_ip": "192.168.1.42",
+      "domain": "a.b.c.d.e.f.g.exfiltration.example.com",
+      "message": "Risky keyword 'exfil' in queried domain",
+      "metadata": {
+        "keyword": "exfil",
+        "description": "Domain contains a risky keyword (malware, phishing, c2, ...)"
+      }
+    }
+  ],
+  "config": {
+    "rate_threshold": 50,
+    "rate_window": 60.0,
+    "entropy_threshold": 3.6,
+    "enabled_rules": [
+      "suspicious_keyword",
+      "suspicious_tld",
+      "high_entropy",
+      "long_label",
+      "deep_subdomain",
+      "txt_tunnel",
+      "rate_limit",
+      "nxdomain_burst"
+    ]
+  }
+}
